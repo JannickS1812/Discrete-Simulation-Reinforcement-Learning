@@ -20,7 +20,7 @@ TITLE = "Vacuum-cleaner world"
 WIDTH = size[0]*width_room
 HEIGHT = size[1]*height_room
 vc_gui = Actor("vc.png")
-ai_active = False
+ai_active = True
 
 dirt = {}
 for x in range(building.rooms.shape[0]):
