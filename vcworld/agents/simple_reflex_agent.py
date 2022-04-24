@@ -44,9 +44,9 @@ class SimpleReflexAgent(Agent):
                     allowed_actions.append(3)
                 if pos_y < (size_y - 1):
                     allowed_actions.append(1)
-                if pos_x > 1:
+                if pos_x > 0:
                     allowed_actions.append(2)
-                if pos_y > 1:
+                if pos_y > 0:
                     allowed_actions.append(4)
 
                 if not allowed_actions:  # no allowed actions, happens only for 1x1 world
