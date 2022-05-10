@@ -1,4 +1,4 @@
-from agent import Agent
+from .agent import Agent
 import numpy as np
 
 
@@ -27,5 +27,32 @@ class SimpleReflexAgent(Agent):
         # w.g. q_table[0, 1] = 5 asserts a q_value of 5 to perform action 1 in state 0
         # the corresponding states and actions can be obtained by self.states[0] and
         # self.actions[1] in this example
+
+        size_x = self.problem.building.size[0]
+        size_y = self.problem.building.size[1]
+        for i, state in enumerate(self.states):
+            pos_x = state[-2]
+            pos_y = state[-1]
+
+            if not state[ pos_x * size_y + pos_y]:  # dirty cell
+                q_table[i, 0] = 1
+            else:
+                # choose one of the possible actions at random
+                # this however does not avoid circles (up->down->up...)
+                allowed_actions = []
+                if pos_x < (size_x - 1):
+                    allowed_actions.append(3)
+                if pos_y < (size_y - 1):
+                    allowed_actions.append(1)
+                if pos_x > 0:
+                    allowed_actions.append(2)
+                if pos_y > 0:
+                    allowed_actions.append(4)
+
+                if not allowed_actions:  # no allowed actions, happens only for 1x1 world
+                    continue
+
+                q_table[i, np.random.choice(allowed_actions)] = 1
+
         return q_table
 
