@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.patches import Patch
 
-def sim(num_cars=5, num_cells=8, dawdle_prob=0.4, t_max=100, v_max=2):
-    cars = [[p, 0] for p in np.sort(random.sample(range(0, num_cells), num_cars))]
+def sim(num_cars=50, num_cells=100, dawdle_prob=0.5, t_max=100, v_max=4):
+    cars = [[p, 0] for p in np.sort(random.sample(range(0, num_cells), num_cars))]  # cars as (pos, vel) tuple
     history = [0] * t_max
 
     for t in range(t_max):
-        for i in range(len(cars)):
-            cars[i][1] = np.min([cars[i][1] + 1, v_max]) # increment velocity
+        for i in range(num_cars):
+            cars[i][1] = np.min([cars[i][1] + 1, v_max])  # increment velocity
 
             # determine distance to front
             if cars[(i+1) % num_cars][0] < cars[i][0]:  # car in front has 'looped around'
@@ -29,10 +29,10 @@ def sim(num_cars=5, num_cells=8, dawdle_prob=0.4, t_max=100, v_max=2):
     return history
 
 if __name__ == "__main__":
-    t_max = 100
-    num_cells = 100
-    num_cars = 50
-    dawdle_prob = 0.5
+    t_max = 500
+    num_cells = 500
+    num_cars = 250
+    dawdle_prob = 0.3
     v_max = 4
     cars_over_time = sim(num_cars=num_cars, num_cells=num_cells, dawdle_prob=dawdle_prob, t_max=t_max, v_max=v_max)
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     plt.ylabel('Time')
 
     # add legend
-    patches = [Patch(color=im.cmap(im.norm(0)), label="Empty"), Patch(facecolor=im.cmap(im.norm(1)), edgecolor='k', linewidth=1, label="Car")]
+    patches = [Patch(color=im.cmap(im.norm(0)), label="Car"), Patch(facecolor=im.cmap(im.norm(1)), edgecolor='k', linewidth=1, label="Empty")]
     plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     plt.gca().set_aspect(1 / plt.gca().get_data_ratio())  # squares the plot
     plt.title('Gray-Scale: ' + title)

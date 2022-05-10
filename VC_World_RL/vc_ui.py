@@ -6,7 +6,7 @@ from vc_environment import Environment
 import time
 
 
-env = Environment(size=(2, 3), seed_value=None)
+env = Environment(size=(3, 3), seed_value=None)
 
 #load q_table
 agent = QLearningAgent(env.problem)

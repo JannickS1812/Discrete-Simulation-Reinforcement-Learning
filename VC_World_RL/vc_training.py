@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # set max number of iterations
-max_iterations = 3000
+max_iterations = 5000
 size = (3, 3)
 it = 0
 env = Environment(size)
