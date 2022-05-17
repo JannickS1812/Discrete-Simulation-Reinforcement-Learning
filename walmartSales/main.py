@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     # console output
     train_loss = train_history[-1, 1]
-    val_loss = train_history[-1, 1]
+    val_loss = val_history[-1, 1]
     test_loss = F.mse_loss(n(torch.tensor(X_test).to(device)), torch.tensor(Y_test).to(device).unsqueeze(1)).item()
     print('\nLosses:')
     print(f'Train:      {train_loss:.4f}')
