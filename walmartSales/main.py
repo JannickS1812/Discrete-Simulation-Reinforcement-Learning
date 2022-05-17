@@ -1,60 +1,117 @@
-import torch
-from torch import nn
-from torch.utils.data import Dataset, DataLoader, TensorDataset
-import torch.nn.functional as F
-import os
-import pandas as pd
-from torchvision.io import read_image
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
-
+import torch
+from torch import nn
+from torch.utils.data import DataLoader, TensorDataset
+import torch.nn.functional as F
 
 device = "cpu"
 if torch.cuda.is_available():
      device = "cuda"
+print(f'Device: {device}')
 
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.l1 = nn.Linear(15,500)
+        self.l1 = nn.Linear(14,500)
         self.l2 = nn.Linear(500,500)
         self.l3 = nn.Linear(500,1)
+
     def forward(self, x):
         x = torch.tanh(self.l1(x))
         x = torch.tanh(self.l2(x))
-        x = self.l3(x)
-        return x
-    def perform_training(self, dataloader, epochs=100):
-        loss_history = []
+        return self.l3(x)
+
+    def train(self,
+              train_loader,
+              val_loader=None,
+              epochs=100,
+              validation_fails=10):
+
+        train_loss_history = []
+        val_loss_history = []
+        running_val_fails = 0
+
         optim = torch.optim.Adam(self.parameters(), 0.001)
+        num_samples = len(train_loader.dataset)
         for t in range(epochs):
-            print(f"Epoch {t + 1}\n-------------------------------")
-            size = len(dataloader.dataset)
-            for batch, (X, y) in enumerate(dataloader):
+            print(f"---------- Epoch {t + 1} ----------")
+            for batch, (X, Y) in enumerate(train_loader):
+
                 # Compute prediction and loss
                 pred = self(X)
-                loss = F.mse_loss(pred, y.unsqueeze(1))
+                loss = F.mse_loss(pred, Y.unsqueeze(1))
+
                 # Backpropagation
                 optim.zero_grad()
                 loss.backward()
                 optim.step()
                 if batch % 100 == 0:
-                    loss, current = loss.item(), batch * len(X)
-                    print(f"loss: {loss:>7f} [{current:>5d}/{size:>5d}]")
-                loss_history.append(loss)
-        return loss_history
+                    print(f"loss: {loss.item():>4f} [{batch * len(X):>5d}/{num_samples:>5d}]")
+
+            # calculate validation error once per epoch
+            train_loss_history.append([t, loss.item()])
+            if val_loader is not None:
+                loss_history = []
+                for (X_val, Y_val) in val_loader:
+                    pred_val = self(X_val)
+                    loss_val = F.mse_loss(pred_val, Y_val.unsqueeze(1))
+                    loss_history.append(loss_val.item())
+
+                loss_val = np.mean(loss_history)
+                val_loss_history.append([t, loss_val])
+                print(f'training loss: {loss.item():>4f}, validation loss: {loss_val.item():>4f}')
+
+                # early stopping
+                if validation_fails is not None and t > 1:
+                    if val_loss_history[-2][1] > val_loss_history[-1][1]: # check if validation loss decreased
+                        running_val_fails += 1
+                    else:
+                        running_val_fails = 0
+                    if running_val_fails >= validation_fails:
+                        print(f'Validation loss did not decrease for {running_val_fails} epochs, training is aborted')
+                        break
+            else:
+                print(f"loss: {loss.item():>4f} [{batch * len(X):>5d}/{num_samples:>5d}]")
+
+        return np.array(train_loss_history), np.array(val_loss_history)
 
 if __name__ == "__main__":
+
+    # load csv
     d = pd.read_csv("walmart_cleaned.csv")
-    d = d.drop("Date", axis=1)
+    d = d.drop(["Date", "Unnamed: 0"], axis=1)
     d = d.astype("float32")
-    d = d.apply(lambda x: ((x - x.mean())/x.std()))
-    label = d["Weekly_Sales"]
-    data = d.drop("Weekly_Sales", axis=1)
-    data_tensor = torch.tensor(data.values).to(device)
-    label_tensor = torch.tensor(label.values).to(device)
-    dataset = TensorDataset(data_tensor, label_tensor)
-    train_loader = DataLoader(dataset, batch_size=1000, shuffle=True, drop_last=False,  )
+    Y = d["Weekly_Sales"].values
+    X = d.drop("Weekly_Sales", axis=1).values
+
+    # train-val-test split with 70-15-15
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3, random_state=1)
+    X_val, X_test, Y_val, Y_test = train_test_split(X_test, Y_test, test_size=0.5, random_state=1)
+
+    # input normalization
+    mean_x = X_train.mean(axis=0)
+    std_x = X_train.std(axis=0)
+    X_train = (X_train - mean_x) / std_x
+    X_val = (X_val - mean_x) / std_x
+    X_test = (X_test - mean_x) / std_x
+
+    # output normalization
+    mean_y = Y_train.mean(axis=0)
+    std_y = Y_train.std(axis=0)
+    Y_train = (Y_train - mean_y) / std_y
+    Y_val = (Y_val - mean_y) / std_y
+    Y_test = (Y_test - mean_y) / std_y
+
+    train_loader = DataLoader(TensorDataset(torch.tensor(X_train).to(device), torch.tensor(Y_train).to(device)),
+                              batch_size=1000, shuffle=True)
+    val_loader = DataLoader(TensorDataset(torch.tensor(X_val).to(device), torch.tensor(Y_val).to(device)),
+                            batch_size=X_val.shape[0])
+    test_loader = DataLoader(TensorDataset(torch.tensor(X_test).to(device), torch.tensor(Y_test).to(device)),
+                             batch_size=X_test.shape[0])
+
     n = Net().to(device)
-    n.perform_training(train_loader)
+    n.train(train_loader, val_loader)
