@@ -33,6 +33,7 @@ class Net(nn.Module):
 
         train_loss_history = []
         val_loss_history = []
+        val_fail_history = []
         running_val_fails = 0
 
         optim = torch.optim.Adam(self.parameters(), 0.001)
@@ -67,17 +68,22 @@ class Net(nn.Module):
 
                 # early stopping
                 if validation_fails is not None and t > 1:
-                    if val_loss_history[-2][1] > val_loss_history[-1][1]: # check if validation loss decreased
+                    if val_loss_history[-2][1] < val_loss_history[-1][1]: # check if validation loss increased
                         running_val_fails += 1
                     else:
                         running_val_fails = 0
+                    val_fail_history.append([t, running_val_fails])
                     if running_val_fails >= validation_fails:
                         print(f'Validation loss did not decrease for {running_val_fails} epochs, training is aborted')
                         break
+
             else:
                 print(f"loss: {loss.item():>4f} [{batch * len(X):>5d}/{num_samples:>5d}]")
 
-        return np.array(train_loss_history), np.array(val_loss_history)
+        if validation_fails is None:
+            return np.array(train_loss_history), np.array(val_loss_history)
+        else:
+            return np.array(train_loss_history), np.array(val_loss_history), np.array(val_fail_history)
 
 if __name__ == "__main__":
 
@@ -110,8 +116,24 @@ if __name__ == "__main__":
                               batch_size=1000, shuffle=True)
     val_loader = DataLoader(TensorDataset(torch.tensor(X_val).to(device), torch.tensor(Y_val).to(device)),
                             batch_size=X_val.shape[0])
-    test_loader = DataLoader(TensorDataset(torch.tensor(X_test).to(device), torch.tensor(Y_test).to(device)),
-                             batch_size=X_test.shape[0])
 
     n = Net().to(device)
-    n.train(train_loader, val_loader)
+    train_history, val_history, val_fail_history = n.train(train_loader, val_loader, epochs=300)
+
+    # console output
+    train_loss = train_history[-1, 1]
+    val_loss = train_history[-1, 1]
+    test_loss = F.mse_loss(n(torch.tensor(X_test).to(device)), torch.tensor(Y_test).to(device).unsqueeze(1)).item()
+    print('\nLosses:')
+    print(f'Train:      {train_loss:.4f}')
+    print(f'Validation: {val_loss:.4f}')
+    print(f'Test:       {test_loss:.4f}')
+
+    # plot loss over epochs
+    plt.plot(train_history[:, 0], train_history[:, 1], label='Training')
+    plt.plot(val_history[:, 0], val_history[:, 1], label='Validation')
+    plt.plot(val_fail_history[:, 0], val_fail_history[:, 1], label='Validation Fails')
+    plt.legend()
+    plt.show()
+
+
