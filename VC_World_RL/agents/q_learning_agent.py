@@ -1,78 +1,93 @@
 from .agent import Agent
 import numpy as np
-import copy
 
 
 class QLearningAgent(Agent):
 
-    def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=15, R_Max=100):
+    def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=100, R_Max=100,
+                 q_table_file="q_table.npy"):
         super().__init__(problem)
         self.actions = problem.get_all_actions()
         self.states = problem.get_all_states()
         if q_table is not None:
             self.q_table = q_table
         else:
-            self.q_table = np.zeros((len(self.states), (len(self.actions))))
+            self.q_table = {}
         if N_sa is not None:
             self.N_sa = N_sa
         else:
-            self.N_sa = np.zeros((len(self.states), (len(self.actions))))
+            self.N_sa = {}
         self.gamma = gamma
         self.max_N_exploration = max_N_exploration
         self.R_Max = R_Max
+        self.file = q_table_file
 
     def act(self):
         # perception
-        current_state = self.problem.get_current_state()
-        s = self.states.index(current_state.to_state())
+        s = self.problem.get_current_state().to_state()
         # lookup in q_table
         action = self.actions[np.argmax(self.q_table[s])]
         return action
 
-    def argmax_with_random_choice_on_eq(self, arr):
-        # returns the argmax of 'arr'
-        # in case of tie returns a random index from the maximal values
-
-        idc = np.where(arr == np.max(arr))[0]
-        return np.random.choice(idc)
-
     def train(self):
-
-        alpha = 0.1
-        s_prev = a_prev = r_prev = None
-        exploration_func = lambda u, n: self.R_Max if n < self.max_N_exploration else u
-
-        # update R_Max to reflect the highest attainable reward for the given room size
-        s_opt = copy.deepcopy(self.problem.get_current_state())
-        s_opt.building.rooms = np.zeros(s_opt.building.rooms.shape).astype(int)
-        self.R_Max = self.problem.eval(s_opt)
-
-        while not self.problem.is_goal_state(self.problem):
-
-            # current state, reward
-            s = self.states.index(self.problem.get_current_state().to_state())
-            r = self.problem.get_reward(self.problem.get_current_state())
-
-            # update frequency- and Q-table
-            if s_prev is not None:
-                self.N_sa[s_prev, a_prev] += 1
-                self.q_table[s_prev, a_prev] = self.q_table[s_prev, a_prev] + alpha * ((r - r_prev) + self.gamma * np.max(self.q_table[s, :]) - self.q_table[s_prev, a_prev])
-
-            # get highest exploration function value
-            expl_func_vals = [exploration_func(self.q_table[s, a], self.N_sa[s, a]) for a in range(len(self.actions))]
-            action = self.actions[self.argmax_with_random_choice_on_eq(expl_func_vals)] # in case of tie take random action
-            a = self.actions.index(action)
-
-            # act and update running state vars
+        action = None
+        s_new = None
+        while True:
+            current_state = self.problem.get_current_state()
+            r = self.problem.get_reward(current_state)
+            s = s_new
+            s_new = current_state.to_state()
+            if s_new not in self.N_sa.keys():
+                self.N_sa[s_new] = np.zeros(len(self.actions))
+                self.q_table[s_new] = np.zeros(len(self.actions))
+            if action is not None:
+                a = self.actions.index(action)
+                self.N_sa[s][a] += 1
+                self.update_q_values(s, a, r, s_new, self.problem.is_goal_state(current_state))
+            if self.problem.is_goal_state(current_state):
+                return self.q_table, self.N_sa
+            action = self.choose_GLIE_action(self.q_table[s_new], self.N_sa[s_new])
+            # act
             self.problem.act(action)
-            s_prev = s
-            a_prev = a
-            r_prev = r
 
-        return self.q_table, self.N_sa
 
-    def save_q_table(self, file):
-        np.save(file, self.q_table)
+    def update_q_values(self, s, a, r, s_new, is_goal_state):
+        if is_goal_state:
+            self.q_table[s][a] = self.q_table[s][a] + self.alpha(s, a) * (r-self.q_table[s][a])
+        else:
+            self.q_table[s][a] = self.q_table[s][a] + self.alpha(s, a) * (r + self.gamma * np.max(self.q_table[s_new]) -
+                                                                      self.q_table[s][a])
 
-    def load_q_table(self, file):
-        self.q_table = np.load(file)
+    def choose_GLIE_action(self, q_values, N_s):
+        exploration_values = np.ones_like(q_values) * self.R_Max
+        # which state/action pairs have been visited sufficiently
+        no_sufficient_exploration = N_s < self.max_N_exploration
+        # turn cost to a positive number
+        q_values_pos = self.R_Max / 2 + q_values
+        # select the relevant values (q or max value)
+        max_values = np.maximum(exploration_values * no_sufficient_exploration, q_values_pos)
+        # assure that we do not dived by zero
+        if max_values.sum() == 0:
+            probabilities = np.ones_like(max_values) / max_values.size
+        else:
+            probabilities = max_values / max_values.sum()
+        # select action according to the (q) values
+        if np.random.random() < (self.max_N_exploration+0.00001)/(np.max(N_s)+0.00001):
+            action = np.random.choice(self.actions, p=probabilities)
+        else:
+            action_indexes = np.argwhere(probabilities == np.amax(probabilities))
+            action_indexes.shape = (action_indexes.shape[0])
+            action_index = np.random.choice(action_indexes)
+            action = self.actions[action_index]
+        return action
+
+    def save_q_table(self):
+        np.save(self.file, self.q_table)
+
+    def load_q_table(self):
+        self.q_table = np.load(self.file)
+
+    def alpha(self, s, a):
+        # learnrate alpha decreases with N_sa for convergence
+        alpha = self.N_sa[s][a]**(-1/2)
+        return alpha

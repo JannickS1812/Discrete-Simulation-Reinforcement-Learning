@@ -1,16 +1,16 @@
 #pip install pgzero
 import pgzrun
 
-from agents.q_learning_agent import QLearningAgent
+from agents.deep_q_learning_agent import DeepQLearningAgent
 from vc_environment import Environment
 import time
 
 
-env = Environment(size=(3, 3), seed_value=None)
+env = Environment(size=(2,3), seed_value=None)
 
 #load q_table
-agent = QLearningAgent(env.problem)
-agent.load_q_table("agents/q_table.npy")
+agent = DeepQLearningAgent(env.problem, file="agents/q_table_double.npy")
+agent.load_q_table()
 
 size = env.size
 building = env.problem.building
