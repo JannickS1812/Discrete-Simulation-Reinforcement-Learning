@@ -168,12 +168,12 @@ class SortingRobotPlantSimProblem(Problem):
         if action_pull == 0: #Pull from Conveyer
             if state[0] == 1: #Conveyer is empty
                 if write_to_plantsim_if_false:
-                    self.__write_reward(-1000)
+                    self.__write_reward(-10)
                 return False
         elif action_pull == 1: #Pull from buffer
             if state[4] == 1: #buffer is empty
                 if write_to_plantsim_if_false:
-                    self.__write_reward(-1000)
+                    self.__write_reward(-10)
                 return False
         return True
 
@@ -244,7 +244,7 @@ class SortingRobotPlantSimProblem(Problem):
 
     def get_reward(self, state):
         # reward from last action
-        reward = self.plantsim.get_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]') - 0.1  # -0.1 penalty for every step
+        reward = self.plantsim.get_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]')
         return reward
 
     def act(self, action):
@@ -279,6 +279,7 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         self.plantsim.quit()
         print("Exited Plantsimulation Model")
+
 
     def __getBufferAndConveyerBeltInformation(self):
         '''
