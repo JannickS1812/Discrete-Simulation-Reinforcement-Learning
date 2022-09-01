@@ -113,7 +113,7 @@ class QActorCriticAgentSortingRobot(QActorCriticAgent):
 
                     # update q_values with state transition
                     if s_old is not None:
-                        r = self.problem.get_reward_from_last_action()
+                        r = self.problem.get_reward(s_old)
                         is_goal_state = self.problem.is_goal_state()
                         self.update_q_values(s_old, a, r, s, is_goal_state)
                         if is_goal_state:
