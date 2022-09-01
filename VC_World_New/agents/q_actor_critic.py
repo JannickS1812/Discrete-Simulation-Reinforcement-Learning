@@ -98,13 +98,6 @@ class QActorCriticAgentSortingRobot(QActorCriticAgent):
         steps = 0
         s_old = None
 
-        current_state = self.problem.get_current_state()
-        if self.problem.is_goal_state(current_state):
-            return
-        s = current_state.to_state()
-        a, log_prob = self.policy.get_action(s)
-        self.problem.act(a)
-
         while steps < max_steps:
             if self.problem.simulation_needs_action():
                 s = self.problem.get_current_state()
