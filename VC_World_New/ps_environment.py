@@ -266,7 +266,8 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         return self.__getPull() == -1 == self.__getTarget()
 
-    def filter_valid_actions(self, state):
+    def filter_valid_actions(self):
+        state  = self.get_current_state()
         conv = state[0] != 1
         buf = state[4] != 1
         if conv == 0 == buf:
