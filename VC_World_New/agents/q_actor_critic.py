@@ -77,7 +77,7 @@ class QActorCriticAgent(ReinforceAgent, DeepQLearningAgent):
 
 class QActorCriticAgentSortingRobot(QActorCriticAgent):
     def __init__(self, problem, Optimizer=torch.optim.Adam,
-                 gamma=0.99, actor_file="q_actor.npy", PolicyClass=MultiLabelActor,
+                 gamma=0.99, actor_file="q_actor.npy", PolicyClass=Actor,
                  batch_size=10, ValueNetworkClass=DeepQTable,
                  critic_file="q_critic.npy"):
         DeepQLearningAgent.__init__(self, problem=problem,
