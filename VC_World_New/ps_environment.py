@@ -377,12 +377,12 @@ class SortingRobotPlantSimProblem(Problem):
 
 class Environment:
 
-    def __init__(self, plantsim: Plantsim, seed_value=1):
+    def __init__(self, plantsim: Plantsim, problem_class=PlantSimulationProblem, seed_value=1):
 
         if seed_value is not None:
             seed(seed_value)
         plantsim.reset_simulation()
-        self.problem = PlantSimulationProblem(plantsim)
+        self.problem = problem_class(plantsim)
         plantsim.start_simulation()
 
     def reset(self):

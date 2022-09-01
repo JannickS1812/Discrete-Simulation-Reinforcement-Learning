@@ -1,4 +1,4 @@
-from ps_environment import Environment
+from ps_environment import Environment, SortingRobotPlantSimProblem
 from agents.q_learning_agent import QLearningAgent
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +16,7 @@ plantsim.set_event_controller()
 
 max_iterations = 500
 it = 0
-env = Environment(plantsim)
+env = Environment(plantsim, problem_class=SortingRobotPlantSimProblem)
 agent = QLearningAgent(env.problem)
 performance_train = []
 q_table = None
