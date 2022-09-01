@@ -27,11 +27,11 @@ class PolicyNetwork(nn.Module):
         self.filter = filter
 
     def forward(self, state):
-        state = self.transform(np.array(state))
-        state = torch.tensor(state).float().unsqueeze(0).to(self.device)
-        last_layer_activations = self.backbone(state)
+        inp = self.transform(np.array(state))
+        inp = torch.tensor(inp).float().unsqueeze(0).to(self.device)
+        last_layer_activations = self.backbone(inp)
         if self.filter is not None:
-            last_layer_activations *= torch.tensor(self.filter()).float().unsqueeze(0).to(self.device)
+            last_layer_activations += torch.log(torch.tensor(self.filter(state)).float().unsqueeze(0).to(self.device))
         return self.head(last_layer_activations)
 
     def get_max_action(self, state):

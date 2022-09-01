@@ -1,5 +1,6 @@
 from ps_environment import Environment, SortingRobotPlantSimProblem
 from agents.q_actor_critic import QActorCriticAgentSortingRobot
+from agents.deep_q_learning_agent import DeepDuelingQTable
 import matplotlib.pyplot as plt
 import numpy as np
 from plantsim.plantsim import Plantsim
@@ -14,24 +15,24 @@ plantsim.set_event_controller()
 
 # set max number of iterations
 
-max_iterations = 500
+max_iterations = 10000
 it = 0
 env = Environment(plantsim, problem_class=SortingRobotPlantSimProblem)
-agent = QActorCriticAgentSortingRobot(env.problem)
+agent = QActorCriticAgentSortingRobot(env.problem, ValueNetworkClass=DeepDuelingQTable)
 performance_train = []
 q_table = None
 # training
 while it < max_iterations:
     print(it)
     it += 1
-    q_table, N_sa = agent.train()
+    agent.train()
     evaluation = env.problem.evaluation
     performance_train.append(evaluation)
     env.reset()
 
 # test_agent#
 env = Environment(plantsim)
-agent = QLearningAgent(env.problem, q_table)
+agent = QActorCriticAgentSortingRobot(env.problem)
 performance_test = []
 number_of_tests = 20
 it = 0

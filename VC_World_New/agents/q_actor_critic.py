@@ -103,15 +103,17 @@ class QActorCriticAgentSortingRobot(QActorCriticAgent):
                 s = self.problem.get_current_state()
                 if s.any():
                     self.problem.pause_simulation()
-
                     # update q_values with state transition
                     if s_old is not None:
                         r = self.problem.get_reward(s_old)
-                        is_goal_state = self.problem.is_goal_state()
+                        is_goal_state = self.problem.is_goal_state(s)
                         self.update_q_values(s_old, a, r, s, is_goal_state)
+
+                        if abs(r) > 5:
+                            print(f"{steps}: \t {r} {s_old}")
+
                         if is_goal_state:
                             return
-
                     a, log_prob = self.policy.get_action(s)
                     self.problem.act(a)
 
@@ -123,4 +125,6 @@ class QActorCriticAgentSortingRobot(QActorCriticAgent):
 
                     s_old = s
                     steps += 1
-                    self.problem.pause_simulation()
+                    self.problem.unpause_simulation()
+
+

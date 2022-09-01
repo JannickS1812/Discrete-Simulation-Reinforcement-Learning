@@ -256,7 +256,7 @@ class SortingRobotPlantSimProblem(Problem):
         Writing Action into plantsim table and then calling the processing of it
         '''
         self.__setPull(action // 3) #ziehen: 0 Förderstrecke     1 Puffer
-        self.__setTarget(action % 2) #target: 0 Lager1     1 Lager2     2 Puffer
+        self.__setTarget(action % 3) #target: 0 Lager1     1 Lager2     2 Puffer
         self.plantsim.execute_simtalk(r'AI_DoAction()')
 
     def simulation_needs_action(self):
@@ -266,8 +266,7 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         return self.__getPull() == -1 == self.__getTarget()
 
-    def filter_valid_actions(self):
-        state  = self.get_current_state()
+    def filter_valid_actions(self, state):
         conv = state[0] != 1
         buf = state[4] != 1
         if conv == 0 == buf:
@@ -387,7 +386,7 @@ class Environment:
         plantsim.start_simulation()
 
     def reset(self):
-        self.problem.plantsim.execute_simtalk("reset")
-        self.problem.plantsim.reset_simulation()
+        #self.problem.plantsim.execute_simtalk("reset")
+        #self.problem.plantsim.reset_simulation()
         self.problem.reset()
-        self.problem.plantsim.start_simulation()
+        #self.problem.plantsim.start_simulation()
