@@ -150,7 +150,7 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         self.plantsim.execute_simtalk(r'Ereignisverwalter.start()')
 
-    def is_goal_state(self):
+    def is_goal_state(self, state):
         '''
         is in goal state, if all elements (100) are sorted correctly
 
