@@ -110,7 +110,7 @@ class QActorCriticAgentSortingRobot(QActorCriticAgent):
                         self.update_q_values(s_old, a, r, s, is_goal_state)
 
                         if abs(r) > 5:
-                            print(f"{steps}: \t {r} {s_old}")
+                            print(f"{steps}: \t {r} \t {self.problem.evaluation} {s_old} ")
 
                         if is_goal_state:
                             return
@@ -126,5 +126,7 @@ class QActorCriticAgentSortingRobot(QActorCriticAgent):
                     s_old = s
                     steps += 1
                     self.problem.unpause_simulation()
+
+
 
 
