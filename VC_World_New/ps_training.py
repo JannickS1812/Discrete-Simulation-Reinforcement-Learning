@@ -9,6 +9,8 @@ from plantsim.plantsim import Plantsim
 plantsim = Plantsim(version='16.1', license_type='Educational', visible = True, trust_models=True)
 plantsim.load_model(r'C:\Users\Philipp\Documents\Uni\Diskrete Simulatzion und RL Projekt\Hartmann_Stranghoener_10_Abgabe_Projekt_3.spp')
 plantsim.set_path_context('.Modelle.Modell')
+plantsim.set_path_context('.Modelle.Modell')
+plantsim.set_event_controller()
 
 # set max number of iterations
 
