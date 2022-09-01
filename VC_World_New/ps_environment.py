@@ -242,7 +242,7 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         return range(6)
 
-    def get_reward(self):
+    def get_reward(self, state):
         # reward from last action
         reward = self.plantsim.get_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]') - 0.1  # -0.1 penalty for every step
         return reward
