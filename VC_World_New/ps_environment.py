@@ -199,7 +199,7 @@ class SortingRobotPlantSimProblem(Problem):
         all_states = np.array([item
                       for l in all_states
                       for sublist in l
-                      for item in sublist])
+                      for item in sublist]).reshape((-1,18))
         return all_states
 
 
