@@ -6,9 +6,9 @@ from plantsim.plantsim import Plantsim
 
 # doubleclick object in PlantSim and lookup the path_context
 # socket is the name of the socket object in PlantSim or None if not used
-model = 'C:\\0 Eigene Dateien\9 Lehre\PlantSimulationProjects\MiniFlow_BE_based.spp'
-plantsim = Plantsim(version='16.1', license_type='Educational', path_context='.Modelle.Modell', model=model,
-                    socket=None, visible=False)
+plantsim = Plantsim(version='16.1', license_type='Educational', visible = True, trust_models=True)
+plantsim.load_model(r'C:\Users\Philipp\Documents\Uni\Diskrete Simulatzion und RL Projekt\Hartmann_Stranghoener_10_Abgabe_Projekt_3.spp')
+plantsim.set_path_context('.Modelle.Modell')
 
 # set max number of iterations
 

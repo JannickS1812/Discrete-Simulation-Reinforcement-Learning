@@ -115,10 +115,8 @@ class PlantSimulationProblem(Problem):
 
 
 class SortingRobotPlantSimProblem(Problem):
-    def __init__(self):
-        self.plantsim = Plantsim(version='16.1', license_type='Educational', visible = True, trust_models=True)
-        self.plantsim.load_model(r'C:\Users\Philipp\Documents\Uni\Diskrete Simulatzion und RL Projekt\Hartmann_Stranghoener_10_Abgabe_Projekt_3.spp')
-        self.plantsim.set_path_context('.Modelle.Modell')
+    def __init__(self, plantsim):
+        self.plantsim = plantsim
         self.plantsim.set_event_controller()
 
     @property
