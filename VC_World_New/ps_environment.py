@@ -1,7 +1,9 @@
-from plantsim.plantsim import Plantsim
-from problem import Problem
 from random import seed
 import itertools
+import numpy as np
+
+from plantsim.plantsim import Plantsim
+from problem import Problem
 
 
 class PlantSimulationProblem(Problem):
@@ -114,35 +116,39 @@ class PlantSimulationProblem(Problem):
 
 class SortingRobotPlantSimProblem(Problem):
     def __init__(self):
-        self.ps = Plantsim(version='16.1', license_type='Educational', visible = True, trust_models=True)
-        self.ps.load_model(r'C:\Users\Philipp\Documents\Uni\Diskrete Simulatzion und RL Projekt\Hartmann_Stranghoener_10_Abgabe_Projekt_3.spp')
-        self.ps.set_path_context('.Modelle.Modell')
-        self.ps.set_event_controller()
+        self.plantsim = Plantsim(version='16.1', license_type='Educational', visible = True, trust_models=True)
+        self.plantsim.load_model(r'C:\Users\Philipp\Documents\Uni\Diskrete Simulatzion und RL Projekt\Hartmann_Stranghoener_10_Abgabe_Projekt_3.spp')
+        self.plantsim.set_path_context('.Modelle.Modell')
+        self.plantsim.set_event_controller()
+
+    @property
+    def evaluation(self):
+        return self.__getScore()
 
     def reset(self):
         '''
         resets simulation
         '''
-        self.ps.reset_simulation()
-        self.ps.set_value(r'RL_Agent_Interaction["Score", 1]', 0)
+        self.plantsim.reset_simulation()
+        self.plantsim.set_value(r'RL_Agent_Interaction["Score", 1]', 0)
 
     def start(self):
         '''
         starts simulation
         '''
-        self.ps.start_simulation()
+        self.plantsim.start_simulation()
 
     def pause_simulation(self):
         '''
         pauses simulation for prediction and calculation
         '''
-        self.ps.execute_simtalk(r'Ereignisverwalter.stop()')
+        self.plantsim.execute_simtalk(r'Ereignisverwalter.stop()')
 
     def unpause_simulation(self):
         '''
         unpauses simulation for prediction and calculation
         '''
-        self.ps.execute_simtalk(r'Ereignisverwalter.start()')
+        self.plantsim.execute_simtalk(r'Ereignisverwalter.start()')
 
     def is_goal_state(self):
         '''
@@ -240,7 +246,7 @@ class SortingRobotPlantSimProblem(Problem):
 
     def get_reward(self):
         # reward from last action
-        reward = self.ps.get_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]') - 0.1  # -0.1 penalty for every step
+        reward = self.plantsim.get_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]') - 0.1  # -0.1 penalty for every step
         return reward
 
     def act(self, action):
@@ -253,7 +259,7 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         self.__setPull(action // 3) #ziehen: 0 Förderstrecke     1 Puffer
         self.__setTarget(action % 2) #target: 0 Lager1     1 Lager2     2 Puffer
-        self.ps.execute_simtalk(r'AI_DoAction()')
+        self.plantsim.execute_simtalk(r'AI_DoAction()')
 
     def simulation_needs_action(self):
         '''
@@ -273,7 +279,7 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         quits the plantsim program
         '''
-        self.ps.quit()
+        self.plantsim.quit()
         print("Exited Plantsimulation Model")
 
     def __getBufferAndConveyerBeltInformation(self):
@@ -283,12 +289,12 @@ class SortingRobotPlantSimProblem(Problem):
         buffer --> Input from Cycle loop
         '''
         #Get Inputs from conveyer Belt and buffer
-        conveyer_belt = self.ps.get_value(r'Förderstrecke19.Inhalt')
+        conveyer_belt = self.plantsim.get_value(r'Förderstrecke19.Inhalt')
         if conveyer_belt != None:
-            conveyer_belt = self.ps.get_value(r'Förderstrecke19.Inhalt.Inhalt')
-        buffer = self.ps.get_value(r'Puffer.Inhalt')
+            conveyer_belt = self.plantsim.get_value(r'Förderstrecke19.Inhalt.Inhalt')
+        buffer = self.plantsim.get_value(r'Puffer.Inhalt')
         if buffer != None:
-            buffer = self.ps.get_value(r'Puffer.Inhalt.Inhalt')
+            buffer = self.plantsim.get_value(r'Puffer.Inhalt.Inhalt')
 
 
         conv_onehot = self.__class_to_onehot(conveyer_belt)
@@ -304,10 +310,10 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         Returns information about what is in which storage and how many
         '''
-        type1 = self.ps.get_value(r'RL_Agent_Interaction["Lager1Typ", 1]')
-        type2 = self.ps.get_value(r'RL_Agent_Interaction["Lager2Typ", 1]')
-        amount1 = self.ps.get_value(r'RL_Agent_Interaction["Lager1Menge", 1]')
-        amount2 = self.ps.get_value(r'RL_Agent_Interaction["Lager2Menge", 1]')
+        type1 = self.plantsim.get_value(r'RL_Agent_Interaction["Lager1Typ", 1]')
+        type2 = self.plantsim.get_value(r'RL_Agent_Interaction["Lager2Typ", 1]')
+        amount1 = self.plantsim.get_value(r'RL_Agent_Interaction["Lager1Menge", 1]')
+        amount2 = self.plantsim.get_value(r'RL_Agent_Interaction["Lager2Menge", 1]')
 
         type1_onehot = self.__class_to_onehot(type1)
         type2_onehot = self.__class_to_onehot(type2)
@@ -320,14 +326,14 @@ class SortingRobotPlantSimProblem(Problem):
         0 or 1
         this value is -1 if robot asks for target
         '''
-        return self.ps.get_value(r'RL_Agent_Interaction["Ziehen", 1]')
+        return self.plantsim.get_value(r'RL_Agent_Interaction["Ziehen", 1]')
 
     def __setPull(self, val):
         '''
         0 or 1 or 2
         Sets the target to select material from if PickAndPlace Robot has no material
         '''
-        self.ps.set_value(r'RL_Agent_Interaction["Ziehen", 1]', val)
+        self.plantsim.set_value(r'RL_Agent_Interaction["Ziehen", 1]', val)
 
     def __getTarget(self):
         '''
@@ -335,21 +341,21 @@ class SortingRobotPlantSimProblem(Problem):
         Gets the encoded target where PickAndPlace Robot should transport the material to
         this value is -1 if robot asks for target
         '''
-        return self.ps.get_value(r'RL_Agent_Interaction["Ziel", 1]')
+        return self.plantsim.get_value(r'RL_Agent_Interaction["Ziel", 1]')
 
     def __setTarget(self, val):
         '''
         0 or 1 or 2
         Sets the target if PickAndPlace Robot has material
         '''
-        self.ps.set_value(r'RL_Agent_Interaction["Ziel", 1]', val)
+        self.plantsim.set_value(r'RL_Agent_Interaction["Ziel", 1]', val)
 
     def __getScore(self):
         '''
         Returns the score of the plantsimulation
         (the amount of materials which have been delivered)
         '''
-        return self.ps.get_value(r'RL_Agent_Interaction["Score", 1]')
+        return self.plantsim.get_value(r'RL_Agent_Interaction["Score", 1]')
 
     def __class_to_onehot(self, cl):
         '''
@@ -369,14 +375,6 @@ class SortingRobotPlantSimProblem(Problem):
         elif "Spanisch" in cl:
             buf_onehot[3] = 1
         return buf_onehot
-
-
-
-
-
-
-
-
 
 
 class Environment:
