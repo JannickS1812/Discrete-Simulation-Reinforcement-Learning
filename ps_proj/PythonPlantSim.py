@@ -198,10 +198,7 @@ class PlantSimProblem_SortingRobot(Problem):
         l = [conv_onehot.tolist(), buf_onehot.tolist(), type1_onehot.tolist(), type2_onehot.tolist(), [amount1], [amount2]]
         s = np.array([item for sublist in l for item in sublist])
         return s
-    
 
-        
-        return type1_onehot, type2_onehot, amount1, amount2
     
     def get_all_actions(self):
         '''
@@ -214,10 +211,11 @@ class PlantSimProblem_SortingRobot(Problem):
         targets = range(3)
         actions = [[pull, target] for pull in pulls for target in targets]
         return actions
-    
+
+
     def get_reward_from_last_action(self):
         #reward from last action
-        reward = self.ps.get_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]') - 0.1 # -0.1 penalty for every step
+        reward = self.ps.get_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]') - 0.1  # -0.1 penalty for every step
         return reward
     
     def act(self, action):

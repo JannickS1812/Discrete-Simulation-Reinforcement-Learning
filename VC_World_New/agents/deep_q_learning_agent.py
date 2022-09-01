@@ -1,4 +1,4 @@
-from q_learning_agent import QLearningAgent
+from .q_learning_agent import QLearningAgent
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torch import nn

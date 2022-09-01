@@ -14,8 +14,8 @@ env = Environment(size)
 #agent = QLearningAgent(env.problem, max_N_exploration=10, q_table_file="agents/q_table.npy")
 #agent = DoubleDeepQLearningAgent(env.problem, max_N_exploration=10, q_table_file="agents/double_deep_q_table.pth",
 #                           ModelClass=DeepDuelingQTable)
-# agent = ReinforceAgent(env.problem, file="agents/policy.pth")
-agent = QActorCriticAgent(env.problem, file="agents/q_actor.npy")
+#agent = ReinforceAgent(env.problem, file="agents/policy.pth")
+agent = QActorCriticAgent(env.problem)
 performance = []
 # training
 while it < max_iterations:

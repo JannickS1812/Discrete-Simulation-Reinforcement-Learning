@@ -4,8 +4,7 @@ import pgzrun
 from agents.deep_q_learning_agent import DeepQLearningAgent, DoubleDeepQLearningAgent, DeepDuelingQTable
 from agents.reinforce_agent import ReinforceAgent
 from agents.q_learning_agent import QLearningAgent
-from agents.simple_reflex_agent import SimpleReflexAgent
-from agents.value_iteration_agent import ValueIterationAgent
+from agents.q_actor_critic import QActorCriticAgent
 from vc_environment import Environment
 import time
 
@@ -14,8 +13,9 @@ env = Environment(size=(2, 2), seed_value=None)
 
 #load q_table
 #agent = DoubleDeepQLearningAgent(env.problem, file="agents/double_deep_q_table.pth", ModelClass=DeepDuelingQTable)
-agent = ReinforceAgent(env.problem, file="agents/policy.pth")
+#agent = ReinforceAgent(env.problem, file="agents/policy.pth")
 #agent = QLearningAgent(env.problem, file="agents/q_table.npy")
+agent = QActorCriticAgent(env.problem)
 agent.load()
 #agent = SimpleReflexAgent(env.problem)
 #agent = ValueIterationAgent(env.problem)
