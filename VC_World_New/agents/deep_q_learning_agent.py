@@ -192,7 +192,7 @@ class DoubleDeepQLearningAgent(DeepQLearningAgent):
 
 class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
-    def train(self, max_steps=500):
+    def train(self, max_steps=500, random_action=0):
         self.problem.reset()
         self.problem.start()
         self.problem.unpause_simulation()
@@ -201,7 +201,6 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
         a = None
         is_goal_state = False
         cumsum = 0
-
         while steps < max_steps and not self.problem.is_goal_state(None):
             if self.problem.simulation_needs_action():
                 s_new = self.problem.get_current_state()
@@ -221,7 +220,11 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                     if is_goal_state:
                         return self.q_table, self.N_sa
 
-                    a = self.choose_GLIE_action(self.q_table[s_new], self.N_sa[tuple(s_new)], filter=self.problem.filter_valid_actions(s_new))
+                    if np.random.random() < random_action:
+                        a = np.random.choice(self.actions)
+                    else:
+                        q_values = self.q_table[s_new] * np.array(self.problem.filter_valid_actions(s_new))
+                        a = self.actions[np.argmax(q_values)]
 
                     # act
                     self.problem.act(a)
@@ -230,6 +233,8 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                     steps += 1
                     self.problem.unpause_simulation()
         return cumsum
+
+
     def choose_GLIE_action(self, q_values, N_s, filter=None):
         exploration_values = np.ones_like(q_values) * self.R_Max
         # which state/action pairs have been visited sufficiently

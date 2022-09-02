@@ -28,9 +28,9 @@ q_table = None
 # training
 cumsums = []
 while it < max_iterations:
-    print(it)
+    print(f"Iteration {it}, P(random action)={0.99**it*100:.1f}%")
     it += 1
-    cumsums.append(agent.train())
+    cumsums.append(agent.train(random_action=0.99**it))
     evaluation = env.problem.evaluation
     performance_train.append(evaluation)
     env.reset()
