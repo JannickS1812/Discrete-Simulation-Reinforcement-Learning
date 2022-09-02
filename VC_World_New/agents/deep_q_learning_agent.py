@@ -190,7 +190,7 @@ class DoubleDeepQLearningAgent(DeepQLearningAgent):
                 self.experience_replay.update_model(self.q_table)
 
 
-class DeepQLearningAgentPlantSim(QLearningAgent):
+class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
     def train(self, max_steps=500):
         self.problem.reset()
@@ -206,12 +206,12 @@ class DeepQLearningAgentPlantSim(QLearningAgent):
                 r = self.problem.get_reward(s_new)
                 if s_new.any():
                     self.problem.pause_simulation()
-                    if list(s_new) not in self.N_sa.keys():
-                        self.N_sa[list(s_new)] = np.zeros(len(self.actions))
+                    if tuple(s_new) not in self.N_sa.keys():
+                        self.N_sa[tuple(s_new)] = np.zeros(len(self.actions))
                         self.q_table[s_new] = np.zeros(len(self.actions))
 
                     if a is not None:
-                        self.N_sa[list(s)][a] += 1
+                        self.N_sa[tuple(s)][a] += 1
                         is_goal_state = self.problem.is_goal_state(s_new)
                         self.update_q_values(s, a, r, s_new, self.problem.is_goal_state(is_goal_state))
 
