@@ -159,7 +159,7 @@ class SortingRobotPlantSimProblem(Problem):
         return self.__getScore() == 100
 
 
-    def is_action_valid(self, action_pull, state, write_to_plantsim_if_false):
+    def is_action_valid(self, action, state, write_to_plantsim_if_false):
         '''
         returns true if there is a product to pull from (determined by action_pull)
 
@@ -168,16 +168,19 @@ class SortingRobotPlantSimProblem(Problem):
         To be able to obtain a reward fro the action the reward will be written manually to plantsim
 
         '''
+        conv_full = state[6]  # conv full
+        buf_full = state[7]  # buffer full
+        action_pull = action // 3
         #conv_onehot, buf_onehot, type1_onehot, type2_onehot, amount1, amount2 = state
         if action_pull == 0: #Pull from Conveyer
-            if state[0] == 1: #Conveyer is empty
+            if not conv_full: #Conveyer is empty
                 if write_to_plantsim_if_false:
-                    self.__write_reward(-10)
+                    self.__write_reward(-100)
                 return False
         elif action_pull == 1: #Pull from buffer
-            if state[4] == 1: #buffer is empty
+            if not buf_full: #buffer is empty
                 if write_to_plantsim_if_false:
-                    self.__write_reward(-10)
+                    self.__write_reward(-100)
                 return False
         return True
 
@@ -445,6 +448,13 @@ class SortingRobotPlantSimProblem(Problem):
             buf_onehot[3] = 1
         return buf_onehot
 
+    def __write_reward(self, r):
+        '''
+        is used if an action is not valid
+        action does not get sent to Plantsim
+        The reward is manually writte n into the rewardfromlastaction column
+        '''
+        self.plantsim.set_value(r'RL_Agent_Interaction["RewardFromLastAction", 1]', r)
 
 class Environment:
 
