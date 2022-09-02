@@ -7,7 +7,7 @@ from copy import deepcopy
 
 
 class ExperienceReplay(Dataset):
-    def __init__(self, model, max_memory=100, gamma=0.99, transform=None, target_transform=None):
+    def __init__(self, model, max_memory=1000, gamma=0.99, transform=None, target_transform=None):
         self.model = model
         self.memory = []
         self.max_memory = max_memory
@@ -17,7 +17,9 @@ class ExperienceReplay(Dataset):
 
     def remember(self, experience, game_over):
         # Save a state to memory
-        self.memory.append([experience, game_over])
+
+        if not any([all(l[0][0] == experience[0]) and l[0][1] == experience[1] and l[0][2] == experience[2] and all(l[0][3] == experience[3]) for l in self.memory]):
+            self.memory.append([experience, game_over])
         # We don't want to store infinite memories, so if we have too many, we just delete the oldest one
         if len(self.memory) > self.max_memory:
             del self.memory[0]
