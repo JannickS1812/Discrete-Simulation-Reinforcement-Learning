@@ -197,19 +197,16 @@ class DeepQLearningAgentPlantSim(QLearningAgent):
         self.problem.start()
         self.problem.unpause_simulation()
 
-        a = None
-        s_new = None
         steps = 0
         is_goal_state = False
         while steps < max_steps:
             if self.problem.simulation_needs_action():
-                s = s_new
                 s_new = self.problem.get_current_state()
                 r = self.problem.get_reward(s_new)
                 if s_new.any():
                     self.problem.pause_simulation()
-                    if s_new not in self.N_sa.keys():
-                        self.N_sa[s_new] = np.zeros(len(self.actions))
+                    if list(s_new) not in self.N_sa.keys():
+                        self.N_sa[list(s_new)] = np.zeros(len(self.actions))
                         self.q_table[s_new] = np.zeros(len(self.actions))
 
                     if a is not None:
@@ -224,9 +221,8 @@ class DeepQLearningAgentPlantSim(QLearningAgent):
 
                     # act
                     self.problem.act(a)
+                    s = s_new
 
                     steps += 1
                     self.problem.unpause_simulation()
-                else:
-                    print('Invalid state')
 
