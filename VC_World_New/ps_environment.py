@@ -1,7 +1,7 @@
 from random import seed
 import itertools
 import numpy as np
-
+import time
 from plantsim.plantsim import Plantsim
 from problem import Problem
 
@@ -148,12 +148,16 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         self.plantsim.execute_simtalk(r'Ereignisverwalter.start()')
 
+    def do_break_episode(self):
+        return 99 <= self.plantsim.get_value(r'Puffer.numMU')
+
     def is_goal_state(self, state):
         '''
         is in goal state, if all elements (100) are sorted correctly
 
         '''
         return self.__getScore() == 100
+
 
     def is_action_valid(self, action_pull, state, write_to_plantsim_if_false):
         '''
@@ -181,6 +185,7 @@ class SortingRobotPlantSimProblem(Problem):
         '''
         Returns numpy array of all possible states
         '''
+        """
         conv_input_type     = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
         buffer_input_type   = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
         storage1_type       = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
@@ -200,6 +205,23 @@ class SortingRobotPlantSimProblem(Problem):
                       for l in all_states
                       for sublist in l
                       for item in sublist]).reshape((-1,18))
+                      
+        """
+        f1 = [[0], [1]]
+        all_states = [[a, b, c, d, e, f, g, h]
+                      for a in f1
+                      for b in f1
+                      for c in f1
+                      for d in f1
+                      for e in f1
+                      for f in f1
+                      for g in f1
+                      for h in f1]
+
+        all_states = np.array([item
+                               for l in all_states
+                               for sublist in l
+                               for item in sublist]).reshape((-1, 8))
         return all_states
 
 
@@ -229,9 +251,51 @@ class SortingRobotPlantSimProblem(Problem):
         #Get Inputs from Storages
         type1_onehot, type2_onehot, amount1, amount2 = self.__getStorageInformation()
 
-        l = [conv_onehot.tolist(), buf_onehot.tolist(), type1_onehot.tolist(), type2_onehot.tolist(), [amount1], [amount2]]
-        s = np.array([item for sublist in l for item in sublist])
+        f1 = all(conv_onehot == type1_onehot) #conveyer matches type in storage1
+        f2 = all(buf_onehot == type1_onehot) #buffer matches type in storage1
+        f3 = all(conv_onehot == type2_onehot) #conveyer matches type in storage2
+        f4 = all(buf_onehot == type2_onehot) #buffer matches type in storage2
+        f5 = type1_onehot[0] == 1 #storage 1 empty
+        f6 = type2_onehot[0] == 1# storage 2 empty
+        f7 = conv_onehot[0] == 0#conv full
+        f8 = buf_onehot[0] == 0#buffer full
+
+
+        #l = [conv_onehot.tolist(), buf_onehot.tolist(), type1_onehot.tolist(), type2_onehot.tolist(), [amount1], [amount2]]
+        #s = np.array([item for sublist in l for item in sublist])
+
+        s = np.array([f1, f2, f3, f4, f5, f6, f7, f8])
         return s
+    def solve_state(self, s):
+        conv_storage1_match = s[0]
+        buf_storage1_match = s[1]
+        conv_storage2_match = s[2]
+        buf_storage2_match = s[3]
+        storage1_empty = s[4]
+        storage2_empty = s[5]
+        conv_full = s[6]
+        buf_full = s[7]
+
+        if buf_full:
+            if storage1_empty or buf_storage1_match:
+                #buf into storage 1
+                return 3
+            if storage2_empty or buf_storage2_match:
+                # buf into storage 1
+                return 4
+        if conv_full:
+            if storage1_empty or conv_storage1_match:
+                #buf into storage 1
+                return 0
+            if storage2_empty or conv_storage2_match:
+                # buf into storage 1
+                return 1
+
+        if conv_full:
+            return 2
+        if buf_full:
+            return 5
+
 
     def get_all_actions(self):
         '''
@@ -267,10 +331,16 @@ class SortingRobotPlantSimProblem(Problem):
         return self.__getPull() == -1 == self.__getTarget()
 
     def filter_valid_actions(self, state):
+
+        """
         conv = state[0] != 1
         buf = state[4] != 1
         if conv == 0 == buf:
             print("No action valid")
+        return [conv, conv, conv, buf, buf, buf]
+        """
+        conv = state[6]
+        buf = state[7]
         return [conv, conv, conv, buf, buf, buf]
 
     def quit_(self):
@@ -387,7 +457,8 @@ class Environment:
         plantsim.start_simulation()
 
     def reset(self):
-        #self.problem.plantsim.execute_simtalk("reset")
         #self.problem.plantsim.reset_simulation()
         self.problem.reset()
+        self.problem.plantsim.execute_simtalk("reset")
+        time.sleep(0.5)
         #self.problem.plantsim.start_simulation()
