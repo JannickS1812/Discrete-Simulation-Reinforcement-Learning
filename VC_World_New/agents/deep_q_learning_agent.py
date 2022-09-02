@@ -198,6 +198,7 @@ class DeepQLearningAgentPlantSim(QLearningAgent):
         self.problem.unpause_simulation()
 
         steps = 0
+        a = None
         is_goal_state = False
         while steps < max_steps:
             if self.problem.simulation_needs_action():
@@ -210,7 +211,7 @@ class DeepQLearningAgentPlantSim(QLearningAgent):
                         self.q_table[s_new] = np.zeros(len(self.actions))
 
                     if a is not None:
-                        self.N_sa[s][a] += 1
+                        self.N_sa[list(s)][a] += 1
                         is_goal_state = self.problem.is_goal_state(s_new)
                         self.update_q_values(s, a, r, s_new, self.problem.is_goal_state(is_goal_state))
 
