@@ -143,5 +143,5 @@ class QActorCriticAgentPlantSim(QActorCriticAgent):
                     self.problem.unpause_simulation()
 
         print("Cum Reward: ", cum_reward, "Score: ", self.problem.evaluation)
-
+        return cum_reward
 

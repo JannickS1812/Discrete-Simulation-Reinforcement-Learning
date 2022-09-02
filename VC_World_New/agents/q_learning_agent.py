@@ -4,7 +4,7 @@ import numpy as np
 
 class QLearningAgent(Agent):
 
-    def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=100, R_Max=100,
+    def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=5, R_Max=100,
                  q_table_file="q_table.npy"):
         super().__init__(problem)
         self.actions = problem.get_all_actions()
@@ -71,8 +71,37 @@ class QLearningAgent(Agent):
             probabilities = np.ones_like(max_values) / max_values.size
         else:
             probabilities = max_values / max_values.sum()
+
         # select action according to the (q) values
+        print("P_exploit: ", (self.max_N_exploration+0.00001)/(np.max(N_s)+0.00001))
         if np.random.random() < (self.max_N_exploration+0.00001)/(np.max(N_s)+0.00001):
+
+            action = np.random.choice(self.actions, p=probabilities)
+        else:
+            action_indexes = np.argwhere(probabilities == np.amax(probabilities))
+            action_indexes.shape = (action_indexes.shape[0])
+            action_index = np.random.choice(action_indexes)
+            action = self.actions[action_index]
+        return action
+
+    def choose_GLIE_action_filter(self, q_values, N_s, filter):
+        exploration_values = np.ones_like(q_values) * self.R_Max
+        # which state/action pairs have been visited sufficiently
+        no_sufficient_exploration = N_s < self.max_N_exploration
+
+        # turn cost to a positive number
+        q_values_pos = self.R_Max / 2 + q_values
+        # select the relevant values (q or max value)
+        max_values = np.maximum(exploration_values * no_sufficient_exploration, q_values_pos)
+        # assure that we do not dived by zero
+        if max_values.sum() == 0:
+            probabilities = np.ones_like(max_values) / max_values.size
+        else:
+            probabilities = max_values / max_values.sum()
+
+        # select action according to the (q) values
+        print("P_exploit: ", (self.max_N_exploration + 0.00001) / (np.max(N_s) + 0.00001))
+        if np.random.random() < (self.max_N_exploration + 0.00001) / (np.max(N_s) + 0.00001):
             action = np.random.choice(self.actions, p=probabilities)
         else:
             action_indexes = np.argwhere(probabilities == np.amax(probabilities))

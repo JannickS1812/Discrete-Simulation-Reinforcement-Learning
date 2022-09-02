@@ -1,9 +1,12 @@
 from ps_environment import Environment, SortingRobotPlantSimProblem
-from agents.q_actor_critic import QActorCriticAgentSortingRobot
-from agents.deep_q_learning_agent import DeepDuelingQTable
+from agents.q_actor_critic import QActorCriticAgentPlantSim
+from agents.deep_q_learning_agent import DeepQLearningAgentPlantSim, DeepQTable
 import matplotlib.pyplot as plt
 import numpy as np
 from plantsim.plantsim import Plantsim
+import matplotlib.pyplot as plt
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 # doubleclick object in PlantSim and lookup the path_context
 # socket is the name of the socket object in PlantSim or None if not used
@@ -18,21 +21,26 @@ plantsim.set_event_controller()
 max_iterations = 10000
 it = 0
 env = Environment(plantsim, problem_class=SortingRobotPlantSimProblem)
-agent = QActorCriticAgentSortingRobot(env.problem, ValueNetworkClass=DeepDuelingQTable)
+agent = QActorCriticAgentPlantSim(env.problem, ValueNetworkClass=DeepQTable)
+#agent = DeepQLearningAgentPlantSim(env.problem)
 performance_train = []
 q_table = None
 # training
+cumsums = []
 while it < max_iterations:
     print(it)
     it += 1
-    agent.train()
+    cumsums.append(agent.train())
     evaluation = env.problem.evaluation
     performance_train.append(evaluation)
     env.reset()
+    plt.plot(cumsums)
+    plt.show(block=False)
 
 # test_agent#
 env = Environment(plantsim)
-agent = QActorCriticAgentSortingRobot(env.problem)
+agent = QActorCriticAgentPlantSim(env.problem, ValueNetworkClass=DeepQTable)
+#agent = DeepQLearningAgentPlantSim(env.problem)
 performance_test = []
 number_of_tests = 20
 it = 0
