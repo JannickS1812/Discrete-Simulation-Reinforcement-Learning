@@ -41,6 +41,7 @@ while it < max_iterations:
     #plt.show(block=False)
     print(cumsums)
     print(scores)
+    agent.save()
 
 # test_agent#
 env = Environment(plantsim)
