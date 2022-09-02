@@ -21,8 +21,8 @@ plantsim.set_event_controller()
 max_iterations = 10000
 it = 0
 env = Environment(plantsim, problem_class=SortingRobotPlantSimProblem)
-agent = QActorCriticAgentPlantSim(env.problem, ValueNetworkClass=DeepQTable)
-#agent = DeepQLearningAgentPlantSim(env.problem)
+#agent = QActorCriticAgentPlantSim(env.problem, ValueNetworkClass=DeepQTable)
+agent = DeepQLearningAgentPlantSim(env.problem)
 performance_train = []
 q_table = None
 # training
@@ -34,8 +34,9 @@ while it < max_iterations:
     evaluation = env.problem.evaluation
     performance_train.append(evaluation)
     env.reset()
-    plt.plot(cumsums)
-    plt.show(block=False)
+    #plt.plot(cumsums)
+    #plt.show(block=False)
+    print(cumsums)
 
 # test_agent#
 env = Environment(plantsim)

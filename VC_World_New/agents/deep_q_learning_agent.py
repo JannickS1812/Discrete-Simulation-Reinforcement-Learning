@@ -134,7 +134,7 @@ class DeepDuelingQTable(DeepQTable):
 
 class DeepQLearningAgent(QLearningAgent):
 
-    def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=100, R_Max=100,
+    def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=10, R_Max=100,
                  q_table_file="deep_q_table.pth", batch_size=10, Optimizer=torch.optim.Adam, loss_fn=nn.MSELoss(),
                  ModelClass=DeepQTable):
         super().__init__(problem, q_table=q_table, N_sa=N_sa, gamma=gamma, max_N_exploration=max_N_exploration,
@@ -200,10 +200,13 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
         steps = 0
         a = None
         is_goal_state = False
-        while steps < max_steps:
+        cumsum = 0
+
+        while steps < max_steps and not self.problem.is_goal_state(None):
             if self.problem.simulation_needs_action():
                 s_new = self.problem.get_current_state()
                 r = self.problem.get_reward(s_new)
+                cumsum += r
                 if s_new.any():
                     self.problem.pause_simulation()
                     if tuple(s_new) not in self.N_sa.keys():
@@ -226,7 +229,7 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
                     steps += 1
                     self.problem.unpause_simulation()
-
+        return cumsum
     def choose_GLIE_action(self, q_values, N_s, filter=None):
         exploration_values = np.ones_like(q_values) * self.R_Max
         # which state/action pairs have been visited sufficiently
@@ -235,6 +238,10 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
         q_values_pos = self.R_Max / 2 + q_values
         # select the relevant values (q or max value)
         max_values = np.maximum(exploration_values * no_sufficient_exploration, q_values_pos)
+
+        if filter is not None:
+            max_values *= np.array(filter)
+
         # assure that we do not dived by zero
         if max_values.sum() == 0:
             probabilities = np.ones_like(max_values) / max_values.size
@@ -247,8 +254,14 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
         # select action according to the (q) values
         if np.random.random() < (self.max_N_exploration + 0.00001) / (np.max(N_s) + 0.00001):
-            action = np.random.choice(self.actions, p=probabilities)
+
+            print("Explore ", (self.max_N_exploration + 0.00001) / (np.max(N_s) + 0.00001), probabilities)
+            try:
+                action = np.random.choice(self.actions, p=probabilities)
+            except:
+                print('Error')
         else:
+            print("Exploit ", (self.max_N_exploration + 0.00001) / (np.max(N_s) + 0.00001), probabilities)
             action_indexes = np.argwhere(probabilities == np.amax(probabilities))
             action_indexes.shape = (action_indexes.shape[0])
             action_index = np.random.choice(action_indexes)
