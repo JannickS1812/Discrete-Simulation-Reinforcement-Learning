@@ -221,7 +221,9 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                         return self.q_table, self.N_sa
 
                     if np.random.random() < random_action:
-                        a = np.random.choice(self.actions)
+                        p = np.array(self.problem.filter_valid_actions(s_new))
+                        p /= p.sum()
+                        a = np.random.choice(self.actions, p=p)
                     else:
                         q_values = self.q_table[s_new] * np.array(self.problem.filter_valid_actions(s_new))
                         a = self.actions[np.argmax(q_values)]
