@@ -188,3 +188,45 @@ class DoubleDeepQLearningAgent(DeepQLearningAgent):
             if self.update_count % self.update_interval == 0:
                 self.q_table = deepcopy(self.online_q_table)
                 self.experience_replay.update_model(self.q_table)
+
+
+class DeepQLearningAgent(QLearningAgent):
+
+    def train(self, max_steps=500):#
+        self.problem.reset()
+        self.problem.start()
+        self.problem.unpause_simulation()
+
+        a = None
+        s_new = None
+        steps = 0
+        is_goal_state = False
+        while steps < max_steps:
+            if self.problem.simulation_needs_action():
+                s = s_new
+                s_new = self.problem.get_current_state()
+                r = self.problem.get_reward(s_new)
+                if s_new.any():
+                    self.problem.pause_simulation()
+                    if s_new not in self.N_sa.keys():
+                        self.N_sa[s_new] = np.zeros(len(self.actions))
+                        self.q_table[s_new] = np.zeros(len(self.actions))
+
+                    if a is not None:
+                        self.N_sa[s][a] += 1
+                        is_goal_state = self.problem.is_goal_state(s_new)
+                        self.update_q_values(s, a, r, s_new, self.problem.is_goal_state(is_goal_state))
+
+                    if is_goal_state:
+                        return self.q_table, self.N_sa
+
+                    a = self.choose_GLIE_action(self.q_table[s_new], self.N_sa[s_new])
+
+                    # act
+                    self.problem.act(a)
+
+                    steps += 1
+                    self.problem.unpause_simulation()
+                else:
+                    print('Invalid state')
+
