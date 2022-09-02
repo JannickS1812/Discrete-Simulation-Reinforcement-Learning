@@ -218,7 +218,7 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                     if is_goal_state:
                         return self.q_table, self.N_sa
 
-                    a = self.choose_GLIE_action(self.q_table[s_new], self.N_sa[s_new], filter=self.problem.filter_valid_actions(s_new))
+                    a = self.choose_GLIE_action(self.q_table[s_new], self.N_sa[tuple(s_new)], filter=self.problem.filter_valid_actions(s_new))
 
                     # act
                     self.problem.act(a)
@@ -243,6 +243,7 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
         if filter is not None:
             probabilities *= np.array(filter)
+            probabilities /= probabilities.sum()
 
         # select action according to the (q) values
         if np.random.random() < (self.max_N_exploration + 0.00001) / (np.max(N_s) + 0.00001):
