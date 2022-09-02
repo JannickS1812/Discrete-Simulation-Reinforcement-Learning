@@ -237,7 +237,7 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
                     steps += 1
                     self.problem.unpause_simulation()
-        return cumsum
+        return cumsum, self.problem.evaluation
 
 
     def choose_GLIE_action(self, q_values, N_s, filter=None):

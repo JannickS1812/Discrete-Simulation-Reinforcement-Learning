@@ -27,16 +27,20 @@ performance_train = []
 q_table = None
 # training
 cumsums = []
+scores = []
 while it < max_iterations:
     print(f"Iteration {it}, P(random action)={0.95**it*100:.1f}%")
     it += 1
-    cumsums.append(agent.train(random_action=0.95**it))
+    cumsum, score = agent.train(random_action=0.95**it)
+    cumsums.append(cumsum)
+    scores.append(score)
     evaluation = env.problem.evaluation
     performance_train.append(evaluation)
     env.reset()
     #plt.plot(cumsums)
     #plt.show(block=False)
     print(cumsums)
+    print(scores)
 
 # test_agent#
 env = Environment(plantsim)

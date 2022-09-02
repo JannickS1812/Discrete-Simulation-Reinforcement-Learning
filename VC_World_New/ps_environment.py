@@ -156,7 +156,7 @@ class SortingRobotPlantSimProblem(Problem):
         is in goal state, if all elements (100) are sorted correctly
 
         '''
-        return self.__getScore() == 100
+        return (self.__getScore() == 100) or (self.__getScore() == 90 and self.plantsim.get_value(r'Puffer.numMU') == 0)
 
 
     def is_action_valid(self, action, state, write_to_plantsim_if_false):
