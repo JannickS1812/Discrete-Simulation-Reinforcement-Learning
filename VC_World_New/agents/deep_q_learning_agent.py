@@ -190,9 +190,9 @@ class DoubleDeepQLearningAgent(DeepQLearningAgent):
                 self.experience_replay.update_model(self.q_table)
 
 
-class DeepQLearningAgent(QLearningAgent):
+class DeepQLearningAgentPlantSim(QLearningAgent):
 
-    def train(self, max_steps=500):#
+    def train(self, max_steps=500):
         self.problem.reset()
         self.problem.start()
         self.problem.unpause_simulation()
