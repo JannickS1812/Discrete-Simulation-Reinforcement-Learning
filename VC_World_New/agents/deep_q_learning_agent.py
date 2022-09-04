@@ -205,6 +205,18 @@ class DoubleDeepQLearningAgent(DeepQLearningAgent):
 
 class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
+    def act(self):
+        # perception
+        s = self.problem.get_current_state()
+
+        if s.any():
+            filter = self.problem.filter_valid_actions(s)
+            q_values = [q if filter[i] else -np.inf for i, q in enumerate(self.q_table[s])]
+            a = self.actions[np.argmax(q_values)]
+            return a
+        else:
+            return None
+
     def train(self, max_steps=500, random_action=0):
         self.problem.reset()
         self.problem.start()
@@ -245,9 +257,6 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                             filter = self.problem.filter_valid_actions(s_new)
                             q_values = [q if filter[i] else -np.inf for i, q in enumerate(self.q_table[s_new]) ]
                             a = self.actions[np.argmax(q_values)]
-
-
-
 
                     # act
                     self.problem.act(a)

@@ -67,18 +67,11 @@ while it < number_of_tests:
     steps = 0
     while steps < max_steps and not env.problem.is_goal_state(None):
         if env.problem.simulation_needs_action():
-            s = env.problem.get_current_state()
-            if s.any():
+            action = agent.act()
+            if action is not None:
                 env.problem.pause_simulation()
-
-                filter = env.problem.filter_valid_actions(s)
-                q_values = [q if filter[i] else -np.inf for i, q in enumerate(env.q_table[s])]
-                a = self.actions[np.argmax(q_values)]
-
-    while not env.problem.is_goal_state(env.problem):
-        action = agent.act()
-        if action is not None:
-            env.problem.act(action)
+                env.problem.act(action)
+                env.problem.unpause_simulation()
     evaluation = env.problem.evaluation
     performance_test.append(evaluation)
     env.reset()
