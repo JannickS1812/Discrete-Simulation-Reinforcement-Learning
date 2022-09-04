@@ -7,7 +7,7 @@ from copy import deepcopy
 
 
 class ExperienceReplay(Dataset):
-    def __init__(self, model, max_memory=1000, gamma=0.99, transform=None, target_transform=None):
+    def __init__(self, model, max_memory=100, gamma=0.99, transform=None, target_transform=None):
         self.model = model
         self.memory = []
         self.max_memory = max_memory
@@ -15,14 +15,24 @@ class ExperienceReplay(Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
+    def get_not_seen_action(self, state, filter):
+        valid_actions = [i for i in range(6) if filter[i] == True]
+        for a in valid_actions:
+            if not any([all(l[0][0] == state) and l[0][1] == a for l in self.memory]):
+                return a
+        return -1
+
     def remember(self, experience, game_over):
         # Save a state to memory
 
         if not any([all(l[0][0] == experience[0]) and l[0][1] == experience[1] and l[0][2] == experience[2] and all(l[0][3] == experience[3]) for l in self.memory]):
             self.memory.append([experience, game_over])
+            if len(self) % 10 == 0:
+                print("ReplayBuffer Length", len(self))
         # We don't want to store infinite memories, so if we have too many, we just delete the oldest one
         if len(self.memory) > self.max_memory:
             del self.memory[0]
+
 
     def update_model(self, model):
         self.model = model
@@ -60,11 +70,11 @@ class DeepQTable(nn.Module):
     def __init__(self, number_of_states, number_of_actions, Optimizer, loss_fn, transform):
         super(DeepQTable, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(number_of_states, 40),
+            nn.Linear(number_of_states, 256),
             nn.ReLU(),
-            nn.Linear(40, 20),
+            nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Linear(20, number_of_actions), )
+            nn.Linear(128, number_of_actions), )
         self.device = "cpu"
         if torch.cuda.is_available():
             self.device = "cuda"
@@ -148,7 +158,7 @@ class DeepQLearningAgent(QLearningAgent):
         if q_table is None:
             self.q_table = self.create_model(Optimizer, loss_fn, transform, ModelClass)
         self.batch_size = batch_size
-        self.experience_replay = ExperienceReplay(self.q_table, transform=transform)
+        self.experience_replay = ExperienceReplay(self.q_table, transform=transform, max_memory=100000)
         self.loss_history = []
 
     def create_model(self, Optimizer, loss_fn, transform, ModelClass):
@@ -157,8 +167,9 @@ class DeepQLearningAgent(QLearningAgent):
     def update_q_values(self, s, a, r, s_new, is_goal_state):
         self.experience_replay.remember((s, a, r, s_new), is_goal_state)
         if len(self.experience_replay) > self.batch_size:
-            train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)
-            self.loss_history += self.q_table.perform_training(train_loader)
+            for i in range(2):
+                train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)
+                self.loss_history += self.q_table.perform_training(train_loader)
 
     def save(self):
         self.q_table.save_model(self.file)
@@ -222,14 +233,21 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                     if is_goal_state:
                         return self.q_table, self.N_sa
 
+                    '''Epsilon Greedy with do one action at least once'''
                     random_action = 0 if random_action < 0.05 else random_action
-                    if np.random.random() < random_action:
-                        p = np.array(self.problem.filter_valid_actions(s_new))
-                        a = np.random.choice(self.actions, p=p / p.sum())
-                    else:
-                        filter = self.problem.filter_valid_actions(s_new)
-                        q_values = [q if filter[i] else -np.inf for i, q in enumerate(self.q_table[s_new]) ]
-                        a = self.actions[np.argmax(q_values)]
+                    '''Do action if not in replay buffer'''
+                    a = self.experience_replay.get_not_seen_action(s_new, filter=self.problem.filter_valid_actions(s_new))
+                    if a == -1:
+                        if np.random.random() < random_action:
+                            p = np.array(self.problem.filter_valid_actions(s_new))
+                            a = np.random.choice(self.actions, p=p / p.sum())
+                        else:
+                            filter = self.problem.filter_valid_actions(s_new)
+                            q_values = [q if filter[i] else -np.inf for i, q in enumerate(self.q_table[s_new]) ]
+                            a = self.actions[np.argmax(q_values)]
+
+
+
 
                     # act
                     self.problem.act(a)

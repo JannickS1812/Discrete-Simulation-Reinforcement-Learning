@@ -211,7 +211,9 @@ class SortingRobotPlantSimProblem(Problem):
                       
         """
         f1 = [[0], [1]]
-        all_states = [[a, b, c, d, e, f, g, h]
+        storage1_amount = [[0], [1], [2], [3], [4], [5], [6], [7], [8], [9]]
+        storage2_amount = [[0], [1], [2], [3], [4], [5], [6], [7], [8], [9]]
+        all_states = [[a, b, c, d, e, f, g, h]#, i, j]
                       for a in f1
                       for b in f1
                       for c in f1
@@ -220,6 +222,8 @@ class SortingRobotPlantSimProblem(Problem):
                       for f in f1
                       for g in f1
                       for h in f1]
+                      #for i in storage1_amount
+                      #for j in storage2_amount]
 
         all_states = np.array([item
                                for l in all_states
@@ -262,12 +266,14 @@ class SortingRobotPlantSimProblem(Problem):
         f6 = type2_onehot[0] == 1# storage 2 empty
         f7 = conv_onehot[0] == 0#conv full
         f8 = buf_onehot[0] == 0#buffer full
+        f9 = amount1
+        f10 = amount2
 
 
         #l = [conv_onehot.tolist(), buf_onehot.tolist(), type1_onehot.tolist(), type2_onehot.tolist(), [amount1], [amount2]]
         #s = np.array([item for sublist in l for item in sublist])
 
-        s = np.array([f1, f2, f3, f4, f5, f6, f7, f8])
+        s = np.array([f1, f2, f3, f4, f5, f6, f7, f8])#, f9, f10])
         return s
     def solve_state(self, s):
         conv_storage1_match = s[0]

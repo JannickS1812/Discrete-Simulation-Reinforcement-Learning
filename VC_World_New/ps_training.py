@@ -29,9 +29,9 @@ q_table = None
 cumsums = []
 scores = []
 while it < max_iterations:
-    print(f"Iteration {it}, P(random action)={0.95**it*100:.1f}%")
+    print(f"Iteration {it}, P(random action)={0.9**it*100:.1f}%")
     it += 1
-    cumsum, score = agent.train(random_action=0.95**it)
+    cumsum, score = agent.train(random_action=0.9**it)
     cumsums.append(cumsum)
     scores.append(score)
     evaluation = env.problem.evaluation
@@ -45,10 +45,11 @@ while it < max_iterations:
 
 # test_agent#
 env = Environment(plantsim)
-agent = QActorCriticAgentPlantSim(env.problem, ValueNetworkClass=DeepQTable)
-#agent = DeepQLearningAgentPlantSim(env.problem)
+#agent = QActorCriticAgentPlantSim(env.problem, ValueNetworkClass=DeepQTable)
+agent = DeepQLearningAgentPlantSim(env.problem)
+agent.load()
 performance_test = []
-number_of_tests = 20
+number_of_tests = 1
 it = 0
 while it < number_of_tests:
     it += 1
