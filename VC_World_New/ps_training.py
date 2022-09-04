@@ -28,10 +28,19 @@ q_table = None
 # training
 cumsums = []
 scores = []
+cnt = 0
 while it < max_iterations:
     print(f"Iteration {it}, P(random action)={0.9**it*100:.1f}%")
     it += 1
     cumsum, score = agent.train(random_action=0.9**it)
+    if score == 100:
+        cnt += 1
+        if cnt > 5:
+            it = max_iterations-5
+            agent.save()
+    else:
+        cnt = 0
+
     cumsums.append(cumsum)
     scores.append(score)
     evaluation = env.problem.evaluation
@@ -41,7 +50,7 @@ while it < max_iterations:
     #plt.show(block=False)
     print(cumsums)
     print(scores)
-    agent.save()
+
 
 # test_agent#
 env = Environment(plantsim)
@@ -51,8 +60,21 @@ agent.load()
 performance_test = []
 number_of_tests = 1
 it = 0
+max_steps = 500
 while it < number_of_tests:
     it += 1
+
+    steps = 0
+    while steps < max_steps and not env.problem.is_goal_state(None):
+        if env.problem.simulation_needs_action():
+            s = env.problem.get_current_state()
+            if s.any():
+                env.problem.pause_simulation()
+
+                filter = env.problem.filter_valid_actions(s)
+                q_values = [q if filter[i] else -np.inf for i, q in enumerate(env.q_table[s])]
+                a = self.actions[np.argmax(q_values)]
+
     while not env.problem.is_goal_state(env.problem):
         action = agent.act()
         if action is not None:
