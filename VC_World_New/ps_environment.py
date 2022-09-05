@@ -213,7 +213,7 @@ class SortingRobotPlantSimProblem(Problem):
         f1 = [[0], [1]]
         storage1_amount = [[0], [1], [2], [3], [4], [5], [6], [7], [8], [9]]
         storage2_amount = [[0], [1], [2], [3], [4], [5], [6], [7], [8], [9]]
-        all_states = [[a, b, c, d, e, f, g, h]#, i, j]
+        all_states = [[a, b, c, d, e, f, g, h, i, j]
                       for a in f1
                       for b in f1
                       for c in f1
@@ -221,14 +221,14 @@ class SortingRobotPlantSimProblem(Problem):
                       for e in f1
                       for f in f1
                       for g in f1
-                      for h in f1]
-                      #for i in storage1_amount
-                      #for j in storage2_amount]
+                      for h in f1
+                      for i in storage1_amount
+                      for j in storage2_amount]
 
         all_states = np.array([item
                                for l in all_states
                                for sublist in l
-                               for item in sublist]).reshape((-1, 8))
+                               for item in sublist]).reshape((-1, 10))
         return all_states
 
 
@@ -273,7 +273,7 @@ class SortingRobotPlantSimProblem(Problem):
         #l = [conv_onehot.tolist(), buf_onehot.tolist(), type1_onehot.tolist(), type2_onehot.tolist(), [amount1], [amount2]]
         #s = np.array([item for sublist in l for item in sublist])
 
-        s = np.array([f1, f2, f3, f4, f5, f6, f7, f8])#, f9, f10])
+        s = np.array([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10])
         return s
     def solve_state(self, s):
         conv_storage1_match = s[0]
@@ -359,6 +359,8 @@ class SortingRobotPlantSimProblem(Problem):
         self.plantsim.quit()
         print("Exited Plantsimulation Model")
 
+    def get_time(self):
+        return self.plantsim.get_value(r'time_to_num(Ereignisverwalter.Zeit)')
 
     def __getBufferAndConveyerBeltInformation(self):
         '''

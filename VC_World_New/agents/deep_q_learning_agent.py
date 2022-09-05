@@ -29,8 +29,8 @@ class ExperienceReplay(Dataset):
 
         if not any([all(l[0][0] == experience[0]) and l[0][1] == experience[1] and l[0][2] == experience[2] and all(l[0][3] == experience[3]) for l in self.memory]):
             self.memory.append([experience, game_over])
-            if len(self) % 10 == 0:
-                print("ReplayBuffer Length", len(self))
+            #if len(self) % 10 == 0:
+            #    print("ReplayBuffer Length", len(self))
         # We don't want to store infinite memories, so if we have too many, we just delete the oldest one
         if len(self.memory) > self.max_memory:
             del self.memory[0]
@@ -165,7 +165,7 @@ class DeepQLearningAgent(QLearningAgent):
 
     def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=10, R_Max=100,
                  q_table_file="deep_q_table.pth", batch_size=50, Optimizer=torch.optim.Adam, loss_fn=nn.MSELoss(),
-                 ModelClass=DeepQTable, prioritized_replay=True):
+                 ModelClass=DeepQTable, prioritized_replay=True, trainings_per_step = 1):
         super().__init__(problem, q_table=q_table, N_sa=N_sa, gamma=gamma, max_N_exploration=max_N_exploration,
                          R_Max=R_Max, q_table_file=q_table_file)
         all_states = np.array(self.states)
@@ -178,6 +178,7 @@ class DeepQLearningAgent(QLearningAgent):
         self.experience_replay = ExperienceReplay(self.q_table, transform=transform, max_memory=100000)
         self.loss_history = []
         self.prioritized_replay = prioritized_replay
+        self.trainings_per_step = trainings_per_step
 
     def create_model(self, Optimizer, loss_fn, transform, ModelClass):
         return ModelClass(len(self.states[0]), len(self.actions), Optimizer, loss_fn, transform)
@@ -189,7 +190,7 @@ class DeepQLearningAgent(QLearningAgent):
             weights = self.experience_replay.get_weights()
 
         if len(self.experience_replay) > self.batch_size:
-            for i in range(2):
+            for i in range(self.trainings_per_step):
                 if self.prioritized_replay:
                     sampler = WeightedRandomSampler(weights, len(weights))
                     train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, sampler=sampler)
@@ -197,8 +198,8 @@ class DeepQLearningAgent(QLearningAgent):
                     train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)
                 self.loss_history += self.q_table.perform_training(train_loader)
 
-    def save(self):
-        self.q_table.save_model(self.file)
+    def save(self, appendix = ''):
+        self.q_table.save_model(self.file + str(appendix))
 
     def load(self):
         self.q_table.load_model(self.file)
@@ -243,6 +244,38 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
         else:
             return None
 
+    def eval(self, max_steps=500):
+        self.problem.reset()
+        self.problem.start()
+        self.problem.unpause_simulation()
+
+        steps = 0
+        a = None
+        is_goal_state = False
+        cumsum = 0
+        while steps < max_steps and not self.problem.is_goal_state(None) and not self.problem.do_break_episode():
+            if self.problem.simulation_needs_action():
+                s_new = self.problem.get_current_state()
+                r = self.problem.get_reward(s_new)
+                cumsum += r
+                if s_new.any():
+                    self.problem.pause_simulation()
+
+
+
+                    filter = self.problem.filter_valid_actions(s_new)
+                    q_values = [q if filter[i] else -np.inf for i, q in enumerate(self.q_table[s_new]) ]
+                    a = self.actions[np.argmax(q_values)]
+
+                    # act
+                    self.problem.act(a)
+                    s = s_new
+
+                    steps += 1
+                    self.problem.unpause_simulation()
+
+        return cumsum/steps, self.problem.evaluation, self.problem.get_time()
+
     def train(self, max_steps=500, random_action=0):
         self.problem.reset()
         self.problem.start()
@@ -272,7 +305,7 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                         return self.q_table, self.N_sa
 
                     '''Epsilon Greedy with do one action at least once'''
-                    random_action = 0 if random_action < 0.05 else random_action
+                    #random_action = 0 if random_action < 0.05 else random_action
                     '''Do action if not in replay buffer'''
                     a = self.experience_replay.get_not_seen_action(s_new, filter=self.problem.filter_valid_actions(s_new))
                     if a == -1:
@@ -290,7 +323,7 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
 
                     steps += 1
                     self.problem.unpause_simulation()
-        return cumsum, self.problem.evaluation
+        return cumsum/steps, self.problem.evaluation
 
 
     def choose_GLIE_action(self, q_values, N_s, filter=None):
