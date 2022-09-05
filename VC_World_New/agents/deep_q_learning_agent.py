@@ -162,7 +162,7 @@ class DeepDuelingQTable(DeepQTable):
 class DeepQLearningAgent(QLearningAgent):
 
     def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=10, R_Max=100,
-                 q_table_file="deep_q_table.pth", batch_size=10, Optimizer=torch.optim.Adam, loss_fn=nn.MSELoss(),
+                 q_table_file="deep_q_table.pth", batch_size=50, Optimizer=torch.optim.Adam, loss_fn=nn.MSELoss(),
                  ModelClass=DeepQTable, prioritized_replay=True):
         super().__init__(problem, q_table=q_table, N_sa=N_sa, gamma=gamma, max_N_exploration=max_N_exploration,
                          R_Max=R_Max, q_table_file=q_table_file)
@@ -250,7 +250,7 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
         a = None
         is_goal_state = False
         cumsum = 0
-        while steps < max_steps and not self.problem.is_goal_state(None):
+        while steps < max_steps and not self.problem.is_goal_state(None) and not self.problem.do_break_episode():
             if self.problem.simulation_needs_action():
                 s_new = self.problem.get_current_state()
                 r = self.problem.get_reward(s_new)
