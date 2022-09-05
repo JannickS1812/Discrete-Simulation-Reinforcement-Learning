@@ -1,6 +1,6 @@
 from .q_learning_agent import QLearningAgent
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from torch import nn
 import torch
 from copy import deepcopy
@@ -33,6 +33,20 @@ class ExperienceReplay(Dataset):
         if len(self.memory) > self.max_memory:
             del self.memory[0]
 
+    def get_weights(self):
+        temporal_diffs = np.zeros((len(self),))
+        for i in range(len(self)):
+            s, a, r, s_new = self.memory[i][0]
+            goal_state = self.memory[i][1]
+
+            if goal_state:
+                td = r - self.model[s][a]
+            else:
+                td = r + self.gamma * max(self.target_model[s_new]) - self.model[s][a]
+            td = abs(td) + 1e-7  # small eps to ensure that each sample has a non-zero propability of being drawn
+            temporal_diffs[i] = td**self.alpha
+
+        return temporal_diffs / np.sum(temporal_diffs)
 
     def update_model(self, model):
         self.model = model
@@ -148,7 +162,7 @@ class DeepQLearningAgent(QLearningAgent):
 
     def __init__(self, problem, q_table=None, N_sa=None, gamma=0.99, max_N_exploration=10, R_Max=100,
                  q_table_file="deep_q_table.pth", batch_size=10, Optimizer=torch.optim.Adam, loss_fn=nn.MSELoss(),
-                 ModelClass=DeepQTable):
+                 ModelClass=DeepQTable, prioritized_replay=True):
         super().__init__(problem, q_table=q_table, N_sa=N_sa, gamma=gamma, max_N_exploration=max_N_exploration,
                          R_Max=R_Max, q_table_file=q_table_file)
         all_states = np.array(self.states)
@@ -160,12 +174,21 @@ class DeepQLearningAgent(QLearningAgent):
         self.batch_size = batch_size
         self.experience_replay = ExperienceReplay(self.q_table, transform=transform, max_memory=100000)
         self.loss_history = []
+        self.prioritized_replay = prioritized_replay
 
     def create_model(self, Optimizer, loss_fn, transform, ModelClass):
         return ModelClass(len(self.states[0]), len(self.actions), Optimizer, loss_fn, transform)
 
     def update_q_values(self, s, a, r, s_new, is_goal_state):
         self.experience_replay.remember((s, a, r, s_new), is_goal_state)
+
+        if self.prioritized_replay:
+            weights = self.experience_replay.get_weights()
+            sampler = WeightedRandomSampler(weights, len(weights))
+            train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, sampler=sampler)
+        else:
+            train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)
+
         if len(self.experience_replay) > self.batch_size:
             for i in range(2):
                 train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)

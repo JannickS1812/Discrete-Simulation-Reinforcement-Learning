@@ -217,58 +217,34 @@ class ReinforceAgent(Agent):
 
 class ReinforceAgentPlantSim(Agent):
 
-    def train(self, max_steps=500):
-        log_probabilities = []
-        rewards = []
-        step_count = 0
-        while True:
-            step_count += 1
-            current_state = self.problem.get_current_state()
-            rewards.append(self.problem.get_reward(current_state))
-            s = current_state.to_state()
-            action_index, log_prob = self.policy.get_action(s)
-            log_probabilities.append(log_prob)
-            if self.problem.is_goal_state(current_state):
-                if len(rewards) > 1:
-                    self.policy.update_policy(log_probabilities, rewards)
-                print(f"Step Count: {step_count}")
-                return
-            # act
-            action = self.actions[action_index]
-            self.problem.act(action)
 
+    def train(self, max_steps=500):
         self.problem.reset()
         self.problem.start()
         self.problem.unpause_simulation()
-        steps = 0
-        s_old = None
 
-        while steps < max_steps:
+        log_probabilities = []
+        rewards = []
+        steps = 0
+        s = None
+        while steps < max_steps and not self.problem.is_goal_state(s):
             if self.problem.simulation_needs_action():
                 s = self.problem.get_current_state()
                 if s.any():
                     self.problem.pause_simulation()
-                    # update q_values with state transition
-                    if s_old is not None:
-                        r = self.problem.get_reward(s_old)
-                        is_goal_state = self.problem.is_goal_state(s)
-                        self.update_q_values(s_old, a, r, s, is_goal_state)
 
-                        if abs(r) > 5:
-                            print(f"{steps}: \t {r} \t {self.problem.evaluation} {s_old} ")
-
-                        if is_goal_state:
-                            return
+                    steps += 1
                     a, log_prob = self.policy.get_action(s)
+                    if s != 1:
+                        log_probabilities.append(log_prob)
+                        rewards.append(self.problem.get_reward(s))
                     self.problem.act(a)
 
-                    # get q-values
-                    q_value_s = self.q_table[s][a]
-
-                    # update policy
-                    self.policy.update_policy(log_prob, q_value_s)
-
-                    s_old = s
-                    steps += 1
                     self.problem.unpause_simulation()
+
+        if len(rewards) > 1:
+            self.policy.update_policy(log_probabilities, rewards)
+            print(f"Step Count: {steps}")
+
+
 
