@@ -261,8 +261,6 @@ class DeepQLearningAgentPlantSim(DeepQLearningAgent):
                 if s_new.any():
                     self.problem.pause_simulation()
 
-
-
                     filter = self.problem.filter_valid_actions(s_new)
                     q_values = [q if filter[i] else -np.inf for i, q in enumerate(self.q_table[s_new]) ]
                     a = self.actions[np.argmax(q_values)]

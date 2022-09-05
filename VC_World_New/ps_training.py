@@ -22,7 +22,7 @@ env = Environment(plantsim, problem_class=SortingRobotPlantSimProblem)
 best_time = 20000 #time in s
 all_times = [best_time]
 all_times_x = [1]
-agent = DeepQLearningAgentPlantSim(env.problem, prioritized_replay=False, batch_size=50, trainings_per_step = 1)
+agent = DeepQLearningAgentPlantSim(env.problem, prioritized_replay=False, batch_size=50, trainings_per_step = 3)
 agent.load()
 def eval_model(iteration):
     """
@@ -32,9 +32,9 @@ def eval_model(iteration):
     avg_rew_per_step, score, solve_time = agent.eval()
     if score == 100 and solve_time < best_time:
         best_time = solve_time
-        agent.save(str(solve_time))
+        agent.save(str(int(solve_time)))
     print(
-        f"Evaluation of model: Solved Problem: {100 == score}, Time to solve or exit: {solve_time:.1f}s, Best Solve Time: {best_time:.1f}s")
+        f"Evaluation of model: Solved Problem: {100 == score}, achieved Score: {score}, Time to solve or exit: {solve_time:.1f}s, Best Solve Time: {best_time:.1f}s")
     all_times_x.append(iteration)
     all_times.append(best_time)
     env.reset()
@@ -46,12 +46,13 @@ avg_rew_per_step = []
 scores = []
 cnt = 0
 
-max_iterations = 250
-p = 0.98 #epsilon parameter
+max_iterations = 100
+p = 0.96 #epsilon parameter
 it = 0
 while it < max_iterations:
     start = time.time()
-    print(f"Iteration {it}, P(random action)={p**it*100:.1f}%")
+    print("--------------------------------------------------------------------------------")
+    print(f"Iteration {it}/{max_iterations}, P(random action)={p**it*100:.1f}%")
 
     rew, score = agent.train(random_action=p**it)
     it += 1
@@ -64,10 +65,12 @@ while it < max_iterations:
     end = time.time()
     print(f"Average Reward per Step: {avg_rew_per_step[-1]:.1f}, Achieved Score: {scores[-1]} Epoch Time: {end - start:.1f}s")
 
-    if score > 80:
+    if score >= 80:
         eval_model(it)
 
-
+print(avg_rew_per_step)
+print(scores)
+print(all_times_x, all_times)
 
 # plot results
 x = np.array(avg_rew_per_step)
