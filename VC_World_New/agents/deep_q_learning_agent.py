@@ -7,11 +7,12 @@ from copy import deepcopy
 
 
 class ExperienceReplay(Dataset):
-    def __init__(self, model, target_model=None, max_memory=100, gamma=0.99, transform=None, target_transform=None):
+    def __init__(self, model, target_model=None, max_memory=100, alpha=0.5, gamma=0.99, transform=None, target_transform=None):
         self.model = model
         self.target_model = model if target_model is None else target_model
         self.memory = []
         self.max_memory = max_memory
+        self.alpha = alpha
         self.gamma = gamma
         self.transform = transform
         self.target_transform = target_transform
