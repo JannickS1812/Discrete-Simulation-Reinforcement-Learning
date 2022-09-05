@@ -36,16 +36,14 @@ class ExperienceReplay(Dataset):
             del self.memory[0]
 
     def get_weights(self):
-        temporal_diffs = np.zeros((len(self),))
-
         states = np.array([row[0][0] for row in self.memory])
         actions = [row[0][1] for row in self.memory]
         rewards = [row[0][2] for row in self.memory]
         states_new = np.array([row[0][3] for row in self.memory])
         goal_state = [row[1] for row in self.memory]
 
-        q_states = self.model(torch.tensor(states).to(self.model.device))
-        q_states_new = self.target_model(torch.tensor(states_new).to(self.target_model.device))
+        q_states = self.model[states]
+        q_states_new = self.target_model[states_new]
 
         td = [rewards[i] + self.gamma * max(q_states_new[i]) - q_states[i, actions[i]] if goal_state[i] else rewards[i] - q_states[i, actions[i]] for i in range(len(self))]
 
@@ -189,14 +187,14 @@ class DeepQLearningAgent(QLearningAgent):
 
         if self.prioritized_replay:
             weights = self.experience_replay.get_weights()
-            sampler = WeightedRandomSampler(weights, len(weights))
-            train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, sampler=sampler)
-        else:
-            train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)
 
         if len(self.experience_replay) > self.batch_size:
             for i in range(2):
-                train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)
+                if self.prioritized_replay:
+                    sampler = WeightedRandomSampler(weights, len(weights))
+                    train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, sampler=sampler)
+                else:
+                    train_loader = DataLoader(self.experience_replay, batch_size=self.batch_size, shuffle=True)
                 self.loss_history += self.q_table.perform_training(train_loader)
 
     def save(self):
