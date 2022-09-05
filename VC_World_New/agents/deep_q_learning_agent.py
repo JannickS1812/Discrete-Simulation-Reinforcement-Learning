@@ -36,16 +36,19 @@ class ExperienceReplay(Dataset):
 
     def get_weights(self):
         temporal_diffs = np.zeros((len(self),))
-        for i in range(len(self)):
-            s, a, r, s_new = self.memory[i][0]
-            goal_state = self.memory[i][1]
 
-            if goal_state:
-                td = r - self.model[s][a]
-            else:
-                td = r + self.gamma * max(self.target_model[s_new]) - self.model[s][a]
-            td = abs(td) + 1e-7  # small eps to ensure that each sample has a non-zero propability of being drawn
-            temporal_diffs[i] = td**self.alpha
+        states = np.array([row[0][0] for row in self.memory])
+        actions = [row[0][1] for row in self.memory]
+        rewards = [row[0][2] for row in self.memory]
+        states_new = np.array([row[0][3] for row in self.memory])
+        goal_state = [row[1] for row in self.memory]
+
+        q_states = self.model(states)
+        q_states_new = self.target_model(states_new)
+
+        td = [rewards[i] + self.gamma * max(q_states_new[i]) - q_states[i, actions[i]] if goal_state[i] else rewards[i] - q_states[i, actions[i]] for i in range(len(self))]
+
+        temporal_diffs = (np.abs(td) + 1e-7)**self.alpha
 
         return temporal_diffs / np.sum(temporal_diffs)
 
